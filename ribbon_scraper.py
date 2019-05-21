@@ -7,6 +7,7 @@ Date: Summer 2019
 '''
 
 import base64
+import copy
 import imghdr
 from pathlib import Path
 
@@ -20,24 +21,60 @@ class RibbonScraper():
     '''
     def __init__(self):
         self.urls = dict(
-            USAF_RIBBONS="https://www.afpc.af.mil/Recognition/Decorations-and-Ribbons/"
+            USAF="https://www.afpc.af.mil/Recognition/Decorations-and-Ribbons/",
+            # using wayback link since this isn't an official source
+            AFROTC="https://web.archive.org/web/20150510190040/http://patriotfiles.com/forum/showthread.php?t=116789" # pylint: disable=line-too-long
         )
-        self.ribbons = list()
+        self.branches = list(["USA", "USN", "USMC", "USAF", "USCG", "AFROTC"])
+        self.ribbons = copy.deepcopy(self.branches)
         self.images_location = Path('./images/USAF')
         self.images_location.mkdir(parents=True, exist_ok=True)
 
-    def scrape(self):
+    def get_soup(self, branch):
+        '''
+        Helper to create the soup for a branch.
+        '''
+        if branch in self.branches:
+            page = requests.get(self.urls[branch])
+            soup = BeautifulSoup(page.content, 'lxml')
+        else:
+            print("Cannot create soup, branch invalid or not implemented.")
+            exit()
+        return soup
+
+    def scrape(self, branch):
+        '''
+        Wrapper function to select branch to scrape. Can scrape all
+        if "all" is passed in as branch.
+        '''
+        if any(x is branch for x in self.branches):
+            soup = self.get_soup(branch)
+            if branch == "USAF":
+                self.scrape_usaf(soup)
+            elif branch == "AFROTC":
+                self.scrape_afrotc(soup)
+        elif branch == "all":
+            self.scrape_all()
+        else:
+            print('Invalid branch given. Valid options are "all",' +
+                  self.branches)
+            exit()
+
+    def scrape_all(self):
+        '''
+        Wrapper function to scrape all branches in succession.
+        '''
+        self.scrape_usaf(self.get_soup("USAF"))
+        self.scrape_afrotc(self.get_soup("AFROTC"))
+
+    def scrape_usaf(self, soup):
         '''
         Scrapes the information from USAF AFPC ribbons page.
         '''
-        page = requests.get(self.urls['USAF_RIBBONS'])
-        page_data = page.content
-        soup = BeautifulSoup(page_data, 'lxml')
-        ribbon_table_div = soup.find(lambda tag:
-                                     tag.name == 'div' and
-                                     tag.has_attr('id') and
-                                     tag['id'] == "dnn_ctr25862_HtmlModule_lblContent")
-        rows = ribbon_table_div.findAll('tr')
+        rows = soup.find(lambda tag:
+                         tag.name == 'div' and
+                         tag.has_attr('id') and
+                         tag['id'] == "dnn_ctr25862_HtmlModule_lblContent").findAll('tr')
         for row in rows:
             for ribbon in row.findAll('td'):
                 ribbon_image_container = ribbon.find('img')
@@ -66,6 +103,19 @@ class RibbonScraper():
                     # put ribbon name into list, in order or precendence
                     self.ribbons.append(ribbon_name)
 
+    def scrape_afrotc(self, soup):
+        '''
+        Scrapes information from a forum post listing all AFROTC ribbons.
+        '''
+        rows = soup.find(lambda tag:
+                         tag.name == 'div' and
+                         tag.has_attr('id') and
+                         tag['id'] == 'post_message_445047').table.findAll('tr')
+        rows = rows[::2]
+        print(rows[0])
+        print(rows[1])
+        print(rows[2])
+
 if __name__ == "__main__":
     SCRAPER = RibbonScraper()
-    SCRAPER.scrape()
+    SCRAPER.scrape("AFROTC")
