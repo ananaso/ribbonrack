@@ -13,16 +13,24 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
-    QStackedWidget,
+    QVBoxLayout,
+    QWidget
 )
 from PyQt5.QtCore import (
         Qt
 )
 
+class RibbonRack(QWidget):
+    '''
+    RibbonRack widget; contains the actual app content.
+    '''
+    def __init__(self):
+        self.layout = QVBoxLayout(self)
+
+
 class MainWindow(QMainWindow):
     '''
     MainWindow controls display of application.
-    Different "screens" are achieved by switching QWidgets
     '''
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
