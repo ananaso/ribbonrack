@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 '''
-Scrapes USAF AFPC ribbons webpage for images, names, and order.
+Scrapes ribbons from webpages for images, names, and order.
+Sources:
+    USAF: AFPC
+    AFROTC: PatriotFiles Forum
 
 Author: Alden Davidson, adavidson@protonmail.ch
 Date: Summer 2019
 '''
 
 import base64
-import copy
 import imghdr
 from pathlib import Path
 
@@ -23,23 +25,21 @@ class RibbonScraper():
         self.urls = dict(
             USAF="https://www.afpc.af.mil/Recognition/Decorations-and-Ribbons/",
             # using wayback link since this isn't an official source
-            AFROTC="https://web.archive.org/web/20150510190040/http://patriotfiles.com/forum/showthread.php?t=116789" # pylint: disable=line-too-long
+            AFROTC="http://patriotfiles.com/forum/showthread.php?t=116789"
         )
-        self.branches = list(["USA", "USN", "USMC", "USAF", "USCG", "AFROTC"])
-        self.ribbons = copy.deepcopy(self.branches)
-        self.images_location = Path('./images/USAF')
-        self.images_location.mkdir(parents=True, exist_ok=True)
+        self.branches = list(["USAF", "AFROTC"])
+        self.ribbons = dict(USAF=list(), AFROTC=list())
+        self.images_location = Path('./images/')
 
     def get_soup(self, branch):
         '''
         Helper to create the soup for a branch.
         '''
-        if branch in self.branches:
-            page = requests.get(self.urls[branch])
-            soup = BeautifulSoup(page.content, 'lxml')
-        else:
-            print("Cannot create soup, branch invalid or not implemented.")
-            exit()
+        url = self.urls[branch]
+        page = requests.get(url)
+        # check for any 404s (or other errors) before using content
+        page.raise_for_status()
+        soup = BeautifulSoup(page.content, 'lxml')
         return soup
 
     def scrape(self, branch):
@@ -49,25 +49,23 @@ class RibbonScraper():
         '''
         if any(x is branch for x in self.branches):
             soup = self.get_soup(branch)
+            folderpath = Path(self.images_location).joinpath(branch + "/")
+            folderpath.mkdir(parents=True, exist_ok=True)
             if branch == "USAF":
-                self.scrape_usaf(soup)
+                print("Scraping USAF at " + self.urls["USAF"])
+                self.scrape_usaf(soup, folderpath)
             elif branch == "AFROTC":
-                self.scrape_afrotc(soup)
+                print("Scraping AFROTC at " + self.urls["AFROTC"])
+                self.scrape_afrotc(soup, folderpath)
         elif branch == "all":
-            self.scrape_all()
+            for branches in self.branches:
+                self.scrape(branches)
         else:
-            print('Invalid branch given. Valid options are "all",' +
+            print('Invalid or unimplemented branch given. Valid options are "all",' +
                   self.branches)
             exit()
 
-    def scrape_all(self):
-        '''
-        Wrapper function to scrape all branches in succession.
-        '''
-        self.scrape_usaf(self.get_soup("USAF"))
-        self.scrape_afrotc(self.get_soup("AFROTC"))
-
-    def scrape_usaf(self, soup):
+    def scrape_usaf(self, soup, folderpath):
         '''
         Scrapes the information from USAF AFPC ribbons page.
         '''
@@ -83,7 +81,7 @@ class RibbonScraper():
                     ribbon_image_data = base64.b64decode(
                         ribbon_image_container['src'].split('base64,', 1)[-1])
                     # determine filetype from image data, since HTML is unreliable
-                    ribbon_image_type = imghdr.what("test", ribbon_image_data)
+                    ribbon_filetype = imghdr.what("", ribbon_image_data)
                     # isolate ribbon name
                     ribbon_name = ribbon.find('a').find('span').contents[0]
                     # Some ribbons have title text all screwed up, and can
@@ -94,16 +92,15 @@ class RibbonScraper():
                     if '(' in ribbon_name:
                         ribbon_name = ribbon_name.split('(')[0].strip()
                     # sanitize name for use as filename
-                    ribbon_name_clean = ribbon_name.replace(" ", "")
-                    ribbon_name_clean = ribbon_name_clean.replace("'", "")
+                    ribbon_name_clean = ribbon_name.replace(" ", "").replace("'", "")
                     # build filepath to save ribbon image
-                    ribbon_filename = Path(ribbon_name_clean + "." + ribbon_image_type)
-                    ribbon_filepath = self.images_location.joinpath(ribbon_filename)
+                    ribbon_filename = Path(ribbon_name_clean + "." + ribbon_filetype)
+                    ribbon_filepath = folderpath.joinpath(ribbon_filename)
                     ribbon_filepath.write_bytes(ribbon_image_data)
                     # put ribbon name into list, in order or precendence
-                    self.ribbons.append(ribbon_name)
+                    self.ribbons["USAF"].append(ribbon_name)
 
-    def scrape_afrotc(self, soup):
+    def scrape_afrotc(self, soup, folderpath):
         '''
         Scrapes information from a forum post listing all AFROTC ribbons.
         '''
@@ -112,9 +109,20 @@ class RibbonScraper():
                          tag.has_attr('id') and
                          tag['id'] == 'post_message_445047').table.findAll('tr')
         rows = rows[::2]
-        print(rows[0])
-        print(rows[1])
-        print(rows[2])
+        for row in rows:
+            ribbon_name = row.font.text
+            ribbon_image_data = requests.get(row.img['src']).content
+            # determine actual filetype
+            ribbon_filetype = imghdr.what("", ribbon_image_data)
+            # create filename
+            ribbon_name_clean = row.font.text.replace(" ", "").replace("*", "").replace("/", "")
+            ribbon_filename = Path(ribbon_name_clean + "." + ribbon_filetype)
+            # create full filepath
+            ribbon_filepath = folderpath.joinpath(ribbon_filename)
+            # save image and ribbon name
+            ribbon_filepath.write_bytes(ribbon_image_data)
+            self.ribbons["AFROTC"].append(ribbon_name)
+
 
 if __name__ == "__main__":
     SCRAPER = RibbonScraper()
