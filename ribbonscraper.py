@@ -60,10 +60,10 @@ class RibbonScraper():
             for branches in ribbons.branches:
                 self.scrape(ribbons, branches)
         else:
-            raise NotImplementedError(branch +
-                                      ' is either invalid or unimplemented. \
-                                      Valid options are "all", ' +
-                                      ribbons.branches)
+            raise NotImplementedError(
+                branch +
+                ' is either invalid or unimplemented. Valid options are all, '
+                + ribbons.branches)
 
     def scrape_usaf(self, ribbons, soup, folderpath):
         # pylint: disable=no-self-use

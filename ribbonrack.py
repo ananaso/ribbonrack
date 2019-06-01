@@ -6,6 +6,7 @@ Author: Alden Davidson, adavidson@protonmail.ch
 Date: Summer 2019
 '''
 
+import json
 import sys
 
 from PyQt5.QtWidgets import (
@@ -37,22 +38,37 @@ class RibbonSelector(QWidget):
     '''
     Allows the user to select the ribbons they want to display.
     '''
-    def __init__(self):
+    def __init__(self, ribbons):
         super().__init__()
+        # initialize the lists
+        self.masterlist = QListWidget()
+        self.init_masterlist(ribbons)
+        # add components to layout
         self.layout = QHBoxLayout(self)
-        self.master_list = QListWidget()
-        self.layout.addWidget(self.master_list)
+        self.layout.addWidget(self.masterlist)
         self.setLayout(self.layout)
+        self.connect_ui()
+
+    def init_masterlist(self, ribbons):
+        '''
+        Initialize the masterlist with all values from ribbon set
+        '''
+        for ribbon in ribbons:
+            self.masterlist.addItem(ribbon)
+
+    def connect_ui(self):
+        self.masterlist.currentItemChanged.connect(
+            lambda: print(self.masterlist.currentItem().text()))
 
 
 class MainWidget(QWidget):
     '''
     Central widget for managing selector, displayer, etc.
     '''
-    def __init__(self):
+    def __init__(self, ribbons):
         super().__init__()
         self.layout = QVBoxLayout()
-        self.selector = RibbonSelector()
+        self.selector = RibbonSelector(ribbons)
         self.layout.addWidget(self.selector)
         self.setLayout(self.layout)
 
@@ -67,11 +83,13 @@ class MainWindow(QMainWindow):
         # window options
         self.setWindowTitle("RibbonRack")
         self.resize(1280, 700)
-        self.mainWidget = MainWidget()
-        self.setCentralWidget(self.mainWidget)
+        # initialize ribbon tools
         self.scraper = RibbonScraper()
         self.ribbons = Ribbons()
         self.init_ribbons()
+        # initialize main widget
+        self.main_widget = MainWidget(self.ribbons.precedence['USAF'])
+        self.setCentralWidget(self.main_widget)
 
     def init_ribbons(self):
         '''
@@ -80,10 +98,9 @@ class MainWindow(QMainWindow):
         '''
         try:
             self.ribbons.load_precedence()
-        except FileNotFoundError:
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
             print("Scraping and storing all ribbons")
-            self.scraper.scrape(self.ribbons, 'USAF')
-            self.scraper.scrape(self.ribbons, 'AFROTC')
+            self.scraper.scrape(self.ribbons, 'all')
             self.ribbons.store_precedence()
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
