@@ -9,7 +9,7 @@ Date: Summer 2019
 
 import collections
 from pathlib import Path
-import pickle
+import json
 
 
 class Ribbons():
@@ -19,24 +19,40 @@ class Ribbons():
     def __init__(self):
         self.branches = set(["USAF", "AFROTC"])
         self.precedence = collections.defaultdict(set)
-        self.info_location = Path('./precedence.p')
+        self.info_location = Path('./precedence.json')
         self.image_location = Path('./images/')
 
     def store_precedence(self):
         '''
-        Stores current ribbon precedence information in a pickled file
+        Stores current ribbon precedence information in a pretty JSON file.
+        Does not check if there's actual ribbon info in self.precedence.
         '''
         self.info_location.touch()
-        with self.info_location.open('wb') as filepath:
-            pickle.dump(self.precedence, filepath)
+        jsonable_precedence = dict(self.precedence)
+        with self.info_location.open('w') as filepath:
+            json.dump(jsonable_precedence, filepath, cls=SetEncoder,
+                      sort_keys=True, indent=4, separators=(',', ': '))
 
     def load_precedence(self):
         '''
-        Loads ribbon precedence information from pickled file.
+        Loads ribbon precedence information from a JSON file.
         '''
         try:
-            with self.info_location.open('rb') as filepath:
-                self.precedence = pickle.load(filepath)
+            with self.info_location.open('r') as filepath:
+                self.precedence = json.load(filepath)
+            # convert back into default dict of sets
+            self.precedence = collections.defaultdict(set, self.precedence)
         except FileNotFoundError:
-            print("Precedence pickle doesn't exist")
+            print("Precedence file doesn't exist")
             raise
+
+
+class SetEncoder(json.JSONEncoder):
+    '''
+    Custom JSON Encoder to handle sets. Note that this overrides the use
+    of lists since the decoder will not be able to differentiate them.
+    '''
+    def default(self, obj):  # pylint: disable=method-hidden,arguments-differ
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
