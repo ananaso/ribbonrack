@@ -28,10 +28,14 @@ class Ribbons():
         Does not check if there's actual ribbon info in self.precedence.
         '''
         self.info_location.touch()
-        jsonable_precedence = dict(self.precedence)
-        with self.info_location.open('w') as filepath:
-            json.dump(jsonable_precedence, filepath, cls=SetEncoder,
-                      sort_keys=True, indent=4, separators=(',', ': '))
+        if self.precedence:
+            jsonable_precedence = dict(self.precedence)
+            with self.info_location.open('w') as filepath:
+                json.dump(jsonable_precedence, filepath, cls=SetEncoder,
+                          sort_keys=True, indent=4, separators=(',', ': '))
+        else:
+            raise RuntimeError(
+                "Precedence is empty. Try loading or scraping it instead.")
 
     def load_precedence(self):
         '''
@@ -44,6 +48,9 @@ class Ribbons():
             self.precedence = collections.defaultdict(set, self.precedence)
         except FileNotFoundError:
             print("Precedence file doesn't exist")
+            raise
+        except json.decoder.JSONDecodeError:
+            print("Issue with JSON file. Try loading or scraping it again.")
             raise
 
 
