@@ -17,8 +17,6 @@ from bs4 import BeautifulSoup
 import requests
 from titlecase import titlecase
 
-from ribbons import Ribbons
-
 
 class RibbonScraper():
     '''
@@ -26,11 +24,10 @@ class RibbonScraper():
     '''
     def __init__(self):
         self.urls = dict(
-            USAF="https://www.afpc.af.mil/Recognition/Decorations-and-Ribbons/",
+            USAF="https://www.afpc.af.mil/Recognition/Decorations-and-Ribbons/",  # noqa: E501
             # unofficial source, cannot find official that's scrapeable
             AFROTC="http://patriotfiles.com/forum/showthread.php?t=116789"
         )
-        self.ribbons = Ribbons()
 
     def get_soup(self, branch):
         '''
@@ -43,31 +40,32 @@ class RibbonScraper():
         soup = BeautifulSoup(page.content, 'lxml')
         return soup
 
-    def scrape(self, branch):
+    def scrape(self, ribbons, branch):
         '''
         Wrapper function to select branch to scrape. Can scrape all if "all"
         is passed in as branch.
         '''
-        if any(x is branch for x in self.ribbons.branches):
+        if any(x is branch for x in ribbons.branches):
             soup = self.get_soup(branch)
             folderpath = Path(
-                self.ribbons.image_location).joinpath(branch + "/")
+                ribbons.image_location).joinpath(branch + "/")
             folderpath.mkdir(parents=True, exist_ok=True)
             if branch == "USAF":
                 print("Scraping USAF at " + self.urls["USAF"])
-                self.scrape_usaf(soup, folderpath)
+                self.scrape_usaf(ribbons, soup, folderpath)
             elif branch == "AFROTC":
                 print("Scraping AFROTC at " + self.urls["AFROTC"])
-                self.scrape_afrotc(soup, folderpath)
+                self.scrape_afrotc(ribbons, soup, folderpath)
         elif branch == "all":
-            for branches in self.ribbons.branches:
-                self.scrape(branches)
+            for branches in ribbons.branches:
+                self.scrape(ribbons, branches)
         else:
             print('Invalid or unimplemented branch given. \
-                    Valid options are "all",' + self.ribbons.branches)
+                    Valid options are "all",' + ribbons.branches)
             exit()
 
-    def scrape_usaf(self, soup, folderpath):
+    def scrape_usaf(self, ribbons, soup, folderpath):
+        # pylint: disable=no-self-use
         '''
         Scrapes the information from USAF AFPC ribbons page.
         '''
@@ -104,9 +102,10 @@ class RibbonScraper():
                     ribbon_filepath = folderpath.joinpath(ribbon_filename)
                     ribbon_filepath.write_bytes(ribbon_image_data)
                     # put ribbon name into list, in order or precendence
-                    self.ribbons.precedence["USAF"].add(ribbon_name)
+                    ribbons.precedence["USAF"].add(ribbon_name)
 
-    def scrape_afrotc(self, soup, folderpath):
+    def scrape_afrotc(self, ribbons, soup, folderpath):
+        # pylint: disable=no-self-use
         '''
         Scrapes information from a forum post listing all AFROTC ribbons.
         '''
@@ -129,9 +128,4 @@ class RibbonScraper():
             ribbon_filepath = folderpath.joinpath(ribbon_filename)
             # save image and ribbon name
             ribbon_filepath.write_bytes(ribbon_image_data)
-            self.ribbons.precedence["AFROTC"].add(ribbon_name)
-
-
-if __name__ == "__main__":
-    SCRAPER = RibbonScraper()
-    SCRAPER.scrape("AFROTC")
+            ribbons.precedence["AFROTC"].add(ribbon_name)

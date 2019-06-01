@@ -10,6 +10,8 @@ import sys
 
 from PyQt5.QtWidgets import (
     QApplication,
+    QHBoxLayout,
+    QListWidget,
     QMainWindow,
     QVBoxLayout,
     QWidget
@@ -18,7 +20,8 @@ from PyQt5.QtCore import (
         Qt
 )
 
-from ribbon_scraper import RibbonScraper
+from ribbonscraper import RibbonScraper
+from ribbons import Ribbons
 
 
 class RibbonDisplay(QWidget):
@@ -36,7 +39,10 @@ class RibbonSelector(QWidget):
     '''
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout(self)
+        self.layout = QHBoxLayout(self)
+        self.master_list = QListWidget()
+        self.layout.addWidget(self.master_list)
+        self.setLayout(self.layout)
 
 
 class MainWidget(QWidget):
@@ -45,7 +51,10 @@ class MainWidget(QWidget):
     '''
     def __init__(self):
         super().__init__()
-        pass
+        self.layout = QVBoxLayout()
+        self.selector = RibbonSelector()
+        self.layout.addWidget(self.selector)
+        self.setLayout(self.layout)
 
 
 class MainWindow(QMainWindow):
@@ -58,19 +67,24 @@ class MainWindow(QMainWindow):
         # window options
         self.setWindowTitle("RibbonRack")
         self.resize(1280, 700)
-        self.setCentralWidget(MainWidget)
+        self.mainWidget = MainWidget()
+        self.setCentralWidget(self.mainWidget)
         self.scraper = RibbonScraper()
-        self.init_scraper()
+        self.ribbons = Ribbons()
+        self.init_ribbons()
 
-    def init_scraper(self):
+    def init_ribbons(self):
         '''
-        Initialize the scraper by loading or retrieving precedence info.
+        Initializes ribbon information, and scrapes all if information is not
+        already stored.
         '''
-        if self.scraper.info_location.exists():
-            self.scraper.load_ribbon_precedence()
-        else:
-            self.scraper.scrape('all')
-            self.store_ribbon_precedence()
+        try:
+            self.ribbons.load_precedence()
+        except FileNotFoundError:
+            print("Scraping and storing all ribbons")
+            self.scraper.scrape(self.ribbons, 'USAF')
+            self.scraper.scrape(self.ribbons, 'AFROTC')
+            self.ribbons.store_precedence()
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         '''

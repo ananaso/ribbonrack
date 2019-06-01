@@ -11,6 +11,7 @@ import collections
 from pathlib import Path
 import pickle
 
+
 class Ribbons():
     '''
     Manages ribbon information
@@ -32,15 +33,10 @@ class Ribbons():
     def load_precedence(self):
         '''
         Loads ribbon precedence information from pickled file.
-        Returns:
-            - 1 if successful
-            - 404 if file not found
         '''
-        rcode = 0
-        if self.info_location.exists():
+        try:
             with self.info_location.open('rb') as filepath:
                 self.precedence = pickle.load(filepath)
-            rcode = 1
-        else:
-            rcode = 0
-        return rcode
+        except FileNotFoundError:
+            print("Precedence pickle doesn't exist")
+            raise
