@@ -6,8 +6,6 @@ Author: Alden Davidson, adavidson@protonmail.ch
 Date: Summer 2019
 '''
 
-# en.wikipedia.org/wiki/PyQt#PyQt5
-
 import sys
 
 from PyQt5.QtWidgets import (
@@ -20,12 +18,34 @@ from PyQt5.QtCore import (
         Qt
 )
 
-class RibbonRack(QWidget):
+from ribbon_scraper import RibbonScraper
+
+
+class RibbonDisplay(QWidget):
     '''
-    RibbonRack widget; contains the actual app content.
+    Displays the ribbons based on what was selected.
     '''
     def __init__(self):
+        super().__init__()
         self.layout = QVBoxLayout(self)
+
+
+class RibbonSelector(QWidget):
+    '''
+    Allows the user to select the ribbons they want to display.
+    '''
+    def __init__(self):
+        super().__init__()
+        self.layout = QVBoxLayout(self)
+
+
+class MainWidget(QWidget):
+    '''
+    Central widget for managing selector, displayer, etc.
+    '''
+    def __init__(self):
+        super().__init__()
+        pass
 
 
 class MainWindow(QMainWindow):
@@ -38,8 +58,21 @@ class MainWindow(QMainWindow):
         # window options
         self.setWindowTitle("RibbonRack")
         self.resize(1280, 700)
+        self.setCentralWidget(MainWidget)
+        self.scraper = RibbonScraper()
+        self.init_scraper()
 
-    def keyPressEvent(self, event): # pylint: disable=invalid-name
+    def init_scraper(self):
+        '''
+        Initialize the scraper by loading or retrieving precedence info.
+        '''
+        if self.scraper.info_location.exists():
+            self.scraper.load_ribbon_precedence()
+        else:
+            self.scraper.scrape('all')
+            self.store_ribbon_precedence()
+
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
         '''
         Defines all custom actions for any keyboard presses. Overrides
         keyPressEvents from MainWindow. This function must be called
