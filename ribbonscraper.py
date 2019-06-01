@@ -10,14 +10,14 @@ Date: Summer 2019
 '''
 
 import base64
-import collections
 import imghdr
 from pathlib import Path
-import pickle
 
 from bs4 import BeautifulSoup
 import requests
 from titlecase import titlecase
+
+from ribbons import Ribbons
 
 
 class RibbonScraper():
@@ -30,26 +30,7 @@ class RibbonScraper():
             # unofficial source, cannot find official that's scrapeable
             AFROTC="http://patriotfiles.com/forum/showthread.php?t=116789"
         )
-        self.branches = set(["USAF", "AFROTC"])
-        self.ribbons = collections.defaultdict(set)
-        self.images_location = Path('./images/')
-        self.info_location = Path('./precendence.p')
-
-    def store_ribbon_precedence(self):
-        '''
-        Stores the current ribbon precendence information into a pickled file.
-        '''
-        self.info_location.touch()
-        with self.info_location.open('wb') as filepath:
-            pickle.dump(self.ribbons, filepath)
-
-    def load_ribbon_precedence(self):
-        '''
-        Loads the ribbon precedence information from a pickled file.
-        Assumes the file exists, please load responsibly.
-        '''
-        with self.info_location.open('rb') as filepath:
-            self.ribbons = pickle.load(filepath)
+        self.ribbons = Ribbons()
 
     def get_soup(self, branch):
         '''
@@ -67,9 +48,10 @@ class RibbonScraper():
         Wrapper function to select branch to scrape. Can scrape all if "all"
         is passed in as branch.
         '''
-        if any(x is branch for x in self.branches):
+        if any(x is branch for x in self.ribbons.branches):
             soup = self.get_soup(branch)
-            folderpath = Path(self.images_location).joinpath(branch + "/")
+            folderpath = Path(
+                self.ribbons.image_location).joinpath(branch + "/")
             folderpath.mkdir(parents=True, exist_ok=True)
             if branch == "USAF":
                 print("Scraping USAF at " + self.urls["USAF"])
@@ -78,11 +60,11 @@ class RibbonScraper():
                 print("Scraping AFROTC at " + self.urls["AFROTC"])
                 self.scrape_afrotc(soup, folderpath)
         elif branch == "all":
-            for branches in self.branches:
+            for branches in self.ribbons.branches:
                 self.scrape(branches)
         else:
             print('Invalid or unimplemented branch given. \
-                    Valid options are "all",' + self.branches)
+                    Valid options are "all",' + self.ribbons.branches)
             exit()
 
     def scrape_usaf(self, soup, folderpath):
@@ -122,7 +104,7 @@ class RibbonScraper():
                     ribbon_filepath = folderpath.joinpath(ribbon_filename)
                     ribbon_filepath.write_bytes(ribbon_image_data)
                     # put ribbon name into list, in order or precendence
-                    self.ribbons["USAF"].add(ribbon_name)
+                    self.ribbons.precedence["USAF"].add(ribbon_name)
 
     def scrape_afrotc(self, soup, folderpath):
         '''
@@ -147,7 +129,7 @@ class RibbonScraper():
             ribbon_filepath = folderpath.joinpath(ribbon_filename)
             # save image and ribbon name
             ribbon_filepath.write_bytes(ribbon_image_data)
-            self.ribbons["AFROTC"].add(ribbon_name)
+            self.ribbons.precedence["AFROTC"].add(ribbon_name)
 
 
 if __name__ == "__main__":
