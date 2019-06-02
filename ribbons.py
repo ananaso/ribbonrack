@@ -18,7 +18,7 @@ class Ribbons():
     '''
     def __init__(self):
         self.branches = set(["USAF", "AFROTC"])
-        self.precedence = collections.defaultdict(set)
+        self.precedence = collections.defaultdict(dict)
         self.info_location = Path('./precedence.json')
         self.image_location = Path('./images/')
 
@@ -31,7 +31,7 @@ class Ribbons():
         if self.precedence:
             jsonable_precedence = dict(self.precedence)
             with self.info_location.open('w') as filepath:
-                json.dump(jsonable_precedence, filepath, cls=SetEncoder,
+                json.dump(jsonable_precedence, filepath,
                           sort_keys=True, indent=4, separators=(',', ': '))
         else:
             raise RuntimeError(
@@ -44,8 +44,8 @@ class Ribbons():
         try:
             with self.info_location.open('r') as filepath:
                 self.precedence = json.load(filepath)
-            # convert back into default dict of sets
-            self.precedence = collections.defaultdict(set, self.precedence)
+            # convert back into default dict
+            self.precedence = collections.defaultdict(dict, self.precedence)
         except FileNotFoundError:
             print("Precedence file doesn't exist")
             raise

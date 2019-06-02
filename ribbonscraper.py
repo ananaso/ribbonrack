@@ -75,6 +75,7 @@ class RibbonScraper():
                          tag.has_attr('id') and
                          tag['id'] == "dnn_ctr25862_HtmlModule_lblContent"
                          ).findAll('tr')
+        precedence = 0
         for row in rows:
             for ribbon in row.findAll('td'):
                 ribbon_image_container = ribbon.find('img')
@@ -95,15 +96,16 @@ class RibbonScraper():
                     if '(' in ribbon_name:
                         ribbon_name = ribbon_name.split('(')[0].strip()
                     # sanitize name for use as filename
-                    ribbon_name_clean = ribbon_name.replace(" ", "")
-                    ribbon_name_clean = ribbon_name_clean.replace("'", "")
+                    ribbon_filename = ribbon_name.replace(" ", "")
+                    ribbon_filename = ribbon_filename.replace("'", "")
                     # build filepath to save ribbon image
                     ribbon_filename = Path(
-                        ribbon_name_clean + "." + ribbon_filetype)
+                        ribbon_filename + "." + ribbon_filetype)
                     ribbon_filepath = folderpath.joinpath(ribbon_filename)
                     ribbon_filepath.write_bytes(ribbon_image_data)
                     # put ribbon name into list, in order or precendence
-                    ribbons.precedence["USAF"].add(ribbon_name)
+                    ribbons.precedence["USAF"][precedence] = ribbon_name
+                    precedence += 1
 
     def scrape_afrotc(self, ribbons, soup, folderpath):
         # pylint: disable=no-self-use
@@ -116,6 +118,7 @@ class RibbonScraper():
                          tag['id'] == 'post_message_445047'
                          ).table.findAll('tr')
         rows = rows[::2]
+        precedence = 0
         for row in rows:
             ribbon_name = row.font.text
             ribbon_image_data = requests.get(row.img['src']).content
@@ -130,4 +133,5 @@ class RibbonScraper():
             ribbon_filepath = folderpath.joinpath(ribbon_filename)
             # save image and ribbon name
             ribbon_filepath.write_bytes(ribbon_image_data)
-            ribbons.precedence["AFROTC"].add(ribbon_name)
+            ribbons.precedence["AFROTC"][precedence] = ribbon_name
+            precedence += 1

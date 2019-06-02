@@ -53,7 +53,7 @@ class RibbonSelector(QWidget):
         '''
         Initialize the masterlist with all values from ribbon set
         '''
-        for ribbon in ribbons:
+        for ribbon in ribbons.values():
             self.masterlist.addItem(ribbon)
 
     def connect_ui(self):
