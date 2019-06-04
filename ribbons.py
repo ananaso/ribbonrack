@@ -8,6 +8,7 @@ Date: Summer 2019
 '''
 
 import collections
+import copy
 from pathlib import Path
 import json
 
@@ -46,20 +47,16 @@ class Ribbons():
                 self.precedence = json.load(filepath)
             # convert back into default dict
             self.precedence = collections.defaultdict(dict, self.precedence)
+            # convert keys back to ints
+            newdict = collections.defaultdict(dict)
+            for branch, ribbons in self.precedence.items():
+                for precedence in ribbons.keys():
+                    newdict[branch][int(precedence)] = \
+                        self.precedence[branch][precedence]
+            self.precedence = copy.deepcopy(newdict)
         except FileNotFoundError:
             print("Precedence file doesn't exist")
             raise
         except json.decoder.JSONDecodeError:
             print("Issue with JSON file. Try loading or scraping it again.")
             raise
-
-
-class SetEncoder(json.JSONEncoder):
-    '''
-    Custom JSON Encoder to handle sets. Note that this overrides the use
-    of lists since the decoder will not be able to differentiate them.
-    '''
-    def default(self, obj):  # pylint: disable=method-hidden,arguments-differ
-        if isinstance(obj, set):
-            return list(obj)
-        return json.JSONEncoder.default(self, obj)

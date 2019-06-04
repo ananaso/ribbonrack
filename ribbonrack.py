@@ -40,25 +40,64 @@ class RibbonSelector(QWidget):
     '''
     def __init__(self, ribbons):
         super().__init__()
+        self.ribbons = ribbons
         # initialize the lists
         self.masterlist = QListWidget()
-        self.init_masterlist(ribbons)
+        self.currentlist = QListWidget()
+        self.init_masterlist()
         # add components to layout
         self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self.masterlist)
         self.setLayout(self.layout)
+        self.init_ui()
         self.connect_ui()
 
-    def init_masterlist(self, ribbons):
+    def init_ui(self):
+        '''
+        Helper function to manage all widget placement
+        '''
+        self.layout.addWidget(self.masterlist)
+        self.layout.addWidget(self.currentlist)
+
+    def init_masterlist(self):
         '''
         Initialize the masterlist with all values from ribbon set
         '''
-        for ribbon in ribbons.values():
-            self.masterlist.addItem(ribbon)
+        for precedence, ribbon in self.ribbons.items():
+            self.masterlist.insertItem(precedence, ribbon)
 
     def connect_ui(self):
-        self.masterlist.currentItemChanged.connect(
-            lambda: print(self.masterlist.currentItem().text()))
+        '''
+        Helper function to manage all connections of UI elements
+        '''
+        self.masterlist.itemDoubleClicked.connect(
+            self.add_current_item)
+        self.currentlist.itemDoubleClicked.connect(
+            self.del_current_item)
+
+    def add_current_item(self):
+        '''
+        Wrapper function to move an item from masterlist to currentlist
+        '''
+        ribbon = self.masterlist.takeItem(self.masterlist.currentRow())
+        self.currentlist.addItem(ribbon)
+
+    def del_current_item(self):
+        '''
+        Wrapper function to move an item from currentlist back to masterlist
+        '''
+        ribbon = self.currentlist.takeItem(self.currentlist.currentRow())
+        precedence = self.get_precedence(ribbon.text())
+        self.masterlist.insertItem(precedence, ribbon)
+
+    def get_precedence(self, ribbon):
+        '''
+        Helper function to get precedence of a ribbon. Raises KeyError if
+        ribbon is not found in list.
+        '''
+        for precedence, name in self.ribbons.items():
+            if ribbon == name:
+                return precedence
+        raise KeyError(ribbon, "not found in the list!")
 
 
 class MainWidget(QWidget):
@@ -102,6 +141,7 @@ class MainWindow(QMainWindow):
             print("Scraping and storing all ribbons")
             self.scraper.scrape(self.ribbons, 'all')
             self.ribbons.store_precedence()
+            self.ribbons.load_precedence()
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         '''
