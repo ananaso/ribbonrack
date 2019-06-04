@@ -11,8 +11,6 @@ import sys
 
 from PyQt5.QtWidgets import (
     QApplication,
-    QHBoxLayout,
-    QListWidget,
     QMainWindow,
     QVBoxLayout,
     QWidget
@@ -21,28 +19,22 @@ from PyQt5.QtCore import (
         Qt
 )
 
+from ribbondisplay import RibbonDisplay
 from ribbons import Ribbons
 from ribbonscraper import RibbonScraper
 from ribbonselector import RibbonSelector
-
-
-class RibbonDisplay(QWidget):
-    '''
-    Displays the ribbons based on what was selected.
-    '''
-    def __init__(self):
-        super().__init__()
-        self.layout = QVBoxLayout(self)
 
 
 class MainWidget(QWidget):
     '''
     Central widget for managing selector, displayer, etc.
     '''
-    def __init__(self, ribbons):
+    def __init__(self, branch, ribbons):
         super().__init__()
         self.layout = QVBoxLayout()
-        self.selector = RibbonSelector(ribbons)
+        self.display = RibbonDisplay(branch)
+        self.selector = RibbonSelector(ribbons, self.display)
+        self.layout.addWidget(self.display)
         self.layout.addWidget(self.selector)
         self.setLayout(self.layout)
 
@@ -62,7 +54,7 @@ class MainWindow(QMainWindow):
         self.ribbons = Ribbons()
         self.init_ribbons()
         # initialize main widget
-        self.main_widget = MainWidget(self.ribbons.precedence['USAF'])
+        self.main_widget = MainWidget("USAF", self.ribbons.precedence['USAF'])
         self.setCentralWidget(self.main_widget)
 
     def init_ribbons(self):

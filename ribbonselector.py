@@ -19,9 +19,10 @@ class RibbonSelector(QWidget):
     '''
     Allows the user to select the ribbons they want to display.
     '''
-    def __init__(self, ribbons):
+    def __init__(self, ribbons, display):
         super().__init__()
         self.ribbons = ribbons
+        self.display = display
         # initialize the lists
         self.masterlist = QListWidget()
         self.currentlist = QListWidget()
@@ -63,6 +64,7 @@ class RibbonSelector(QWidget):
         '''
         ribbon = self.masterlist.takeItem(self.masterlist.currentRow())
         self.currentlist.addItem(ribbon)
+        self.display.add_ribbon(ribbon)
 
     def del_current_item(self):
         '''
