@@ -13,6 +13,9 @@ from PyQt5.QtWidgets import (
     QListWidgetItem,
     QWidget
 )
+from PyQt5.QtCore import (
+    QItemSelectionModel
+)
 
 
 class RibbonSelector(QWidget):
@@ -24,8 +27,8 @@ class RibbonSelector(QWidget):
         self.ribbons = ribbons
         self.display = display
         # initialize the lists
-        self.masterlist = QListWidget()
-        self.currentlist = QListWidget()
+        self.masterlist = RibbonListWidget()
+        self.currentlist = RibbonListWidget()
         self.masterlist.setSortingEnabled(True)
         self.currentlist.setSortingEnabled(True)
         self.init_masterlist()
@@ -53,6 +56,12 @@ class RibbonSelector(QWidget):
         '''
         Helper function to manage all connections of UI elements
         '''
+        #self.masterlist.pressed.connect(
+        #    lambda: self.currentlist.setCurrentItem(
+        #        self.currentlist.currentItem(), QItemSelectionModel.Deselect))
+        #self.currentlist.pressed.connect(
+        #    lambda: self.masterlist.setCurrentItem(
+        #        self.masterlist.currentItem(), QItemSelectionModel.Deselect))
         self.masterlist.itemDoubleClicked.connect(
             self.add_current_item)
         self.currentlist.itemDoubleClicked.connect(
@@ -73,15 +82,17 @@ class RibbonSelector(QWidget):
         ribbon = self.currentlist.takeItem(self.currentlist.currentRow())
         self.masterlist.addItem(ribbon)
 
-    def get_precedence(self, ribbon):
+
+class RibbonListWidget(QListWidget):
+    '''
+    Subclass of QListWidget to support out-of-focus event handling
+    '''
+    def focusOutEvent(self, event):  # pylint: disable=invalid-name
         '''
-        Helper function to get precedence of a ribbon. Raises KeyError if
-        ribbon is not found in list.
+        Deselect the currently-selected item if the list loses focus
         '''
-        for precedence, name in self.ribbons.items():
-            if ribbon == name:
-                return precedence
-        raise KeyError(ribbon, "not found in the list!")
+        self.setCurrentItem(self.currentItem(), QItemSelectionModel.Deselect)
+        super(RibbonListWidget, self).focusOutEvent(event)
 
 
 class RibbonListWidgetItem(QListWidgetItem):
