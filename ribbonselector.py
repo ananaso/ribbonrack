@@ -56,12 +56,6 @@ class RibbonSelector(QWidget):
         '''
         Helper function to manage all connections of UI elements
         '''
-        #self.masterlist.pressed.connect(
-        #    lambda: self.currentlist.setCurrentItem(
-        #        self.currentlist.currentItem(), QItemSelectionModel.Deselect))
-        #self.currentlist.pressed.connect(
-        #    lambda: self.masterlist.setCurrentItem(
-        #        self.masterlist.currentItem(), QItemSelectionModel.Deselect))
         self.masterlist.itemDoubleClicked.connect(
             self.add_current_item)
         self.currentlist.itemDoubleClicked.connect(
@@ -91,7 +85,8 @@ class RibbonListWidget(QListWidget):
         '''
         Deselect the currently-selected item if the list loses focus
         '''
-        self.setCurrentItem(self.currentItem(), QItemSelectionModel.Deselect)
+        for item in self.selectedItems():
+            self.setCurrentItem(item, QItemSelectionModel.Deselect)
         super(RibbonListWidget, self).focusOutEvent(event)
 
 
