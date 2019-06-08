@@ -33,10 +33,18 @@ class MainWidget(QWidget):
         super().__init__()
         self.layout = QVBoxLayout()
         self.display = RibbonDisplay(branch)
-        self.selector = RibbonSelector(ribbons, self.display)
+        self.selector = RibbonSelector(ribbons)
         self.layout.addWidget(self.display)
         self.layout.addWidget(self.selector)
         self.setLayout(self.layout)
+        self.connect_ui()
+
+    def connect_ui(self):
+        '''
+        Manages all connection to UI elements
+        '''
+        self.selector.ribbon_added.connect(self.display.add_ribbon)
+        self.selector.ribbon_removed.connect(self.display.remove_ribbon)
 
 
 class MainWindow(QMainWindow):
