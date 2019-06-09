@@ -32,8 +32,9 @@ class RibbonListWidgetItem(QListWidgetItem):
     def __lt__(self, other):
         return self.precedence < other.precedence
 
-    def __gt__(self, other):
-        return self.precedence > other.precedence
+    def __repr__(self):
+        typestr = "RibbonListWidgetItem"
+        return typestr + "(" + self.text() + "," + str(self.precedence) + ")"
 
 
 class RibbonListWidget(QListWidget):
@@ -108,7 +109,7 @@ class RibbonSelector(QWidget):
         '''
         # RibbonSelector
         self.masterlist.removed_ribbon.connect(self.on_ribbon_added)
-        #self.currentlist.removed_ribbbon.connect(self.on_ribbon_removed)
+        self.currentlist.removed_ribbon.connect(self.on_ribbon_removed)
         # masterlist
         self.masterlist.itemDoubleClicked.connect(
             self.masterlist.remove_current_ribbon)
