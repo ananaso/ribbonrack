@@ -10,11 +10,9 @@ Date: Summer 2019
 from pathlib import Path
 
 from PyQt5.QtWidgets import (
-    QBoxLayout,
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QVBoxLayout,
     QWidget
 )
 from PyQt5.QtGui import (
@@ -22,7 +20,6 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtCore import (
     pyqtSlot,
-    QRect,
     Qt
 )
 
@@ -71,10 +68,8 @@ class RibbonDisplay(QWidget):
         '''
         filename = ribbon.text()
         filename = filename.replace(" ", "")
-        if self.branch == 'USAF':
-            filename = filename.replace("'", "")
-        elif self.branch == 'AFROTC':
-            filename = filename.replace("/", "")
+        filename = filename.replace("'", "")
+        filename = filename.replace("/", "")
         basepath = Ribbons().image_location
         filepath = Path(self.branch + "/" + filename + ".jpeg")
         return basepath.joinpath(filepath)
@@ -88,7 +83,6 @@ class RibbonGridLayout(QGridLayout):
     def __init__(self, parent=None):  # pylint: disable=unused-argument
         super().__init__()
         self.setSpacing(0)
-        #self.setGeometry(QRect(0, 0, 90, 25))
         self.tracker = list()
 
     def add_ribbon(self, ribbon_pair):
