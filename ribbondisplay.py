@@ -10,8 +10,11 @@ Date: Summer 2019
 from pathlib import Path
 
 from PyQt5.QtWidgets import (
+    QBoxLayout,
     QGridLayout,
+    QHBoxLayout,
     QLabel,
+    QVBoxLayout,
     QWidget
 )
 from PyQt5.QtGui import (
@@ -19,6 +22,7 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtCore import (
     pyqtSlot,
+    QRect,
     Qt
 )
 
@@ -33,8 +37,12 @@ class RibbonDisplay(QWidget):
     def __init__(self, branch):
         super().__init__()
         self.branch = branch
+        self.container_layout = QHBoxLayout()
         self.layout = RibbonGridLayout(self)
-        self.setLayout(self.layout)
+        self.container_layout.addStretch()
+        self.container_layout.addLayout(self.layout)
+        self.container_layout.addStretch()
+        self.setLayout(self.container_layout)
 
     def add_ribbon(self, ribbon):
         '''
@@ -42,10 +50,13 @@ class RibbonDisplay(QWidget):
         '''
         # add visible image
         cell = QLabel()
+        cell.setAlignment(Qt.AlignCenter)
         image_path = self.create_image_path(ribbon)
         image = QPixmap(str(image_path))
         cell.setPixmap(image)
-        self.layout.add_ribbon(ribbon, cell)
+        ribbon_pair = (ribbon, cell)
+        self.layout.add_ribbon(ribbon_pair)
+        self.layout.rearrange(ribbon_pair)
 
     @pyqtSlot(RibbonListWidgetItem)
     def remove_ribbon(self, ribbon):
@@ -61,9 +72,9 @@ class RibbonDisplay(QWidget):
         filename = ribbon.text()
         filename = filename.replace(" ", "")
         if self.branch == 'USAF':
-            filename.replace("'", "")
+            filename = filename.replace("'", "")
         elif self.branch == 'AFROTC':
-            filename.replace("/", "")
+            filename = filename.replace("/", "")
         basepath = Ribbons().image_location
         filepath = Path(self.branch + "/" + filename + ".jpeg")
         return basepath.joinpath(filepath)
@@ -76,42 +87,43 @@ class RibbonGridLayout(QGridLayout):
     '''
     def __init__(self, parent=None):  # pylint: disable=unused-argument
         super().__init__()
+        self.setSpacing(0)
+        #self.setGeometry(QRect(0, 0, 90, 25))
         self.tracker = list()
-        self.setOriginCorner(Qt.BottomLeftCorner)
 
-    def add_ribbon(self, ribbon, cell):
+    def add_ribbon(self, ribbon_pair):
         '''
         Inserts a ribbon into the grid layout and the ribbon tracking list
         '''
         # insert to tracker
-        item = (ribbon, cell)
-        self.tracker.append(item)
+        self.tracker.append(ribbon_pair)
         self.tracker.sort()
-        self.rearrange(item)
+        # calculate ribbon position
+        row, col = divmod(self.tracker.index(ribbon_pair), 3)
         # add to display
-        row, col = divmod(self.tracker.index(item), 3)
-        self.addWidget(cell, row, col)
+        self.addWidget(ribbon_pair[1], row, col)
 
-    def remove_ribbon(self, ribbon):
+    def remove_ribbon(self, ribbon_name):
         '''
         Removes a ribbon from the grid layout and the ribbon tracking list
         '''
         # find (ribbon,cell) pair in tracker
-        item = [item for item in self.tracker if ribbon in item][0]
-        self.tracker.remove(item)
-        self.removeWidget(item[1])
+        ribbon_pair = [item for item in self.tracker if ribbon_name in item]
+        # remove parent of cell to destroy it, and stop tracking it
+        ribbon_pair[1].setParent(None)
+        self.tracker.remove(ribbon_pair)
 
-    def rearrange(self, item):
+    def rearrange(self, ribbon_pair):
         '''
         Rearranges all the ribbons in the display based upon the newly-inserted
         ribbon.
         '''
         max_index = len(self.tracker) - 1
-        new_ribbon_index = self.tracker.index(item)
+        new_ribbon_index = self.tracker.index(ribbon_pair)
         for index in range(max_index, new_ribbon_index, -1):
             # get item from current position
-            moving_item = self.tracker[index][1]
-            self.removeWidget(moving_item)
+            moving_pair = self.tracker[index]
+            moving_pair[1].setParent(None)
             # re-insert item to new position
             row, col = divmod(index, 3)
-            self.addWidget(moving_item, row, col)
+            self.addWidget(moving_pair[1], row, col)
