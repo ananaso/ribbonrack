@@ -83,6 +83,7 @@ class RibbonGridLayout(QGridLayout):
     def __init__(self, parent=None):  # pylint: disable=unused-argument
         super().__init__()
         self.setSpacing(0)
+        self.setOriginCorner(Qt.BottomRightCorner)
         self.tracker = list()
 
     def add_ribbon(self, ribbon_pair):
@@ -91,9 +92,10 @@ class RibbonGridLayout(QGridLayout):
         '''
         # insert to tracker
         self.tracker.append(ribbon_pair)
-        self.tracker.sort()
+        self.tracker.sort(reverse=True)
         # calculate ribbon position
         row, col = divmod(self.tracker.index(ribbon_pair), 3)
+        #print(ribbon_pair[0].text() + ", Index: " + str(self.tracker.index(ribbon_pair)) + ", Row: " + str(row) + ", Col: " + str(col))
         # add to display
         self.addWidget(ribbon_pair[1], row, col)
 
