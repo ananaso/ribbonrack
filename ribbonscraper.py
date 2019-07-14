@@ -121,13 +121,14 @@ class RibbonScraper():
         precedence = 0
         for row in rows:
             ribbon_name = row.font.text
-            ribbon_name.replace("*", "")
+            ribbon_name = ribbon_name.replace("*", "")
             ribbon_image_data = requests.get(row.img['src']).content
             # determine actual filetype
             ribbon_filetype = imghdr.what("", ribbon_image_data)
             # create and sanitize filename
-            ribbon_name_clean = row.font.text.replace(" ", "")
+            ribbon_name_clean = ribbon_name.replace(" ", "")
             ribbon_name_clean = ribbon_name_clean.replace("/", "")
+            ribbon_name_clean = ribbon_name_clean.replace(".", "")
             ribbon_filename = Path(ribbon_name_clean + "." + ribbon_filetype)
             # create full filepath
             ribbon_filepath = folderpath.joinpath(ribbon_filename)
