@@ -60,7 +60,8 @@ class RibbonDisplay(QWidget):
         '''
         Removes a ribbon from the layout display
         '''
-        self.layout.remove_ribbon(ribbon)
+        ribbon_pair, removed_index = self.layout.remove_ribbon(ribbon)
+        self.layout.rearrange(ribbon_pair, removed_index)
 
     def create_image_path(self, ribbon):
         '''
@@ -95,7 +96,6 @@ class RibbonGridLayout(QGridLayout):
         self.tracker.sort(reverse=True)
         # calculate ribbon position
         row, col = divmod(self.tracker.index(ribbon_pair), 3)
-        #print(ribbon_pair[0].text() + ", Index: " + str(self.tracker.index(ribbon_pair)) + ", Row: " + str(row) + ", Col: " + str(col))
         # add to display
         self.addWidget(ribbon_pair[1], row, col)
 
@@ -104,18 +104,24 @@ class RibbonGridLayout(QGridLayout):
         Removes a ribbon from the grid layout and the ribbon tracking list
         '''
         # find (ribbon,cell) pair in tracker
-        ribbon_pair = [item for item in self.tracker if ribbon_name in item]
+        # Must get 0th item since this returns a list containing the tuple
+        ribbon_pair = [item for item in self.tracker if ribbon_name in item][0]
+        index = self.tracker.index(ribbon_pair)
         # remove parent of cell to destroy it, and stop tracking it
         ribbon_pair[1].setParent(None)
         self.tracker.remove(ribbon_pair)
+        return ribbon_pair, index
 
-    def rearrange(self, ribbon_pair):
+    def rearrange(self, ribbon_pair, removed_index=None):
         '''
         Rearranges all the ribbons in the display based upon the newly-inserted
         ribbon.
         '''
         max_index = len(self.tracker) - 1
-        new_ribbon_index = self.tracker.index(ribbon_pair)
+        if removed_index is None:
+            new_ribbon_index = self.tracker.index(ribbon_pair)
+        else:
+            new_ribbon_index = removed_index - 1
         for index in range(max_index, new_ribbon_index, -1):
             # get item from current position
             moving_pair = self.tracker[index]
