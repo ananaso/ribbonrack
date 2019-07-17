@@ -10,6 +10,7 @@ Date: Summer 2019
 import collections
 import copy
 from pathlib import Path
+import platform
 import json
 
 
@@ -20,8 +21,15 @@ class Ribbons():
     def __init__(self):
         self.branches = set(["USAF", "AFROTC"])
         self.precedence = collections.defaultdict(dict)
-        self.info_location = Path('./precedence.json')
-        self.image_location = Path('./images/')
+        if platform.system() == 'Linux':
+            self.info_location = Path.home().joinpath(Path('.ribbonrack/precedence.json'))
+            self.image_location = Path.home().joinpath(Path('.ribbonrack/images/'))
+        elif platform.system() == 'Windows':
+            self.info_location = Path('./ribbonrack_data/precedence.json')
+            self.image_location = Path('./ribbonrack_data/images/')
+        else:
+            raise RuntimeError("Operation system not supported.")
+            
 
     def store_precedence(self):
         '''

@@ -8,6 +8,7 @@ Date: Summer 2019
 
 import json
 import sys
+import _append_run_path
 
 from PyQt5.QtWidgets import (
     QApplication,
