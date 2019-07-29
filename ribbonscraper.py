@@ -14,7 +14,7 @@ import imghdr
 from pathlib import Path
 
 from bs4 import BeautifulSoup
-import lxml
+import lxml # imported to ensure inclusion in binaries
 import requests
 from titlecase import titlecase
 
