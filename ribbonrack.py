@@ -8,15 +8,17 @@ Date: Summer 2019
 
 import json
 import sys
-import _append_run_path
+# this fixes PATH so binaries build on Windows
+import _append_run_path # pylint: disable=unused-import
 
-from PyQt5.QtWidgets import (
+from PyQt5.QtWidgets import ( # pylint: disable=wrong-import-order
     QApplication,
     QMainWindow,
+    QTabWidget,
     QVBoxLayout,
     QWidget
 )
-from PyQt5.QtCore import (
+from PyQt5.QtCore import ( # pylint: disable=wrong-import-order
         Qt
 )
 
@@ -26,7 +28,7 @@ from ribbonscraper import RibbonScraper
 from ribbonselector import RibbonSelector
 
 
-class MainWidget(QWidget):
+class RackWidget(QWidget):
     '''
     Central widget for managing selector, displayer, etc.
     '''
@@ -63,8 +65,19 @@ class MainWindow(QMainWindow):
         self.ribbons = Ribbons()
         self.init_ribbons()
         # initialize main widget
-        self.main_widget = MainWidget("USAF", self.ribbons.precedence['USAF'])
-        self.setCentralWidget(self.main_widget)
+        self.rack_stack = QTabWidget()
+        self.init_racks()
+        self.setCentralWidget(self.rack_stack)
+
+    def init_racks(self):
+        '''
+        Initializes all the "racks" available to the user, which are what
+        display ribbons and the selection systems for each branch.
+        '''
+        usaf_rack = RackWidget("USAF", self.ribbons.precedence['USAF'])
+        afrotc_rack = RackWidget("AFROTC", self.ribbons.precedence['AFROTC'])
+        self.rack_stack.addTab(usaf_rack, "USAF")
+        self.rack_stack.addTab(afrotc_rack, "AFROTC")
 
     def init_ribbons(self):
         '''
