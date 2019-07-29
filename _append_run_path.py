@@ -1,5 +1,7 @@
-# Fix qt import error
-# Include this file before import PyQt5
+'''
+Fix qt import error
+Include this file before import PyQt5
+'''
 
 import os
 import sys
