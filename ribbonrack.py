@@ -66,6 +66,7 @@ class MainWindow(QMainWindow):
         self.init_ribbons()
         # initialize main widget
         self.rack_stack = QTabWidget()
+        self.rack_stack.setMovable(True)
         self.init_racks()
         self.setCentralWidget(self.rack_stack)
 
